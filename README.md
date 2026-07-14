@@ -84,9 +84,9 @@ Untuk masuk ke dalam dashboard aplikasi, gunakan kredensial berikut:
 *   **Password:** `password`
 
 ## 👨‍💻 Kontributor
-*   **Nama:** [Marvin David]
-*   **NIM:** [NIM Anda]
+*   **Nama:** [Marviel David]
+*   **NIM:** [411231222]
 *   **Mata Kuliah:** Pemrograman Fullstack
 
 ---
-*Dibuat dengan ❤️ untuk UAS Pemrograman Fullstack.*
+*Dibuat untuk UAS Pemrograman Fullstack.*
