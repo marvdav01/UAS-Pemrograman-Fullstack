@@ -9,6 +9,24 @@ Smart-Hub Management System adalah platform terintegrasi untuk pengelolaan aset,
 *   **🛡️ Sistem Autentikasi Aman:** Login khusus administrator (Monolith Architecture dengan Laravel Authentication).
 *   **💎 UI/UX Premium:** Antarmuka responsif dan modern dengan gaya *Glassmorphism*, typography elegan (Plus Jakarta Sans), dan SVG Icons.
 
+## 📸 Screenshot Aplikasi
+
+### 1. Halaman Login
+![Halaman Login](docs/screenshots/1_login.png)
+*Halaman login administrator dengan tata letak dua panel, gradient orbs animasi, dan desain glassmorphism yang modern.*
+
+### 2. Dashboard
+![Dashboard](docs/screenshots/2_dashboard.png)
+*Halaman utama interaktif yang menampilkan kartu statistik berwarna, daftar transaksi terbaru, dan akses cepat ke berbagai menu operasional.*
+
+### 3. Data Peralatan
+![Data Peralatan](docs/screenshots/3_data_peralatan.png)
+*Halaman manajemen inventaris dengan bilah pencarian, label status berwarna untuk ketersediaan, dan sistem manajemen stok real-time.*
+
+### 4. Kategori Peralatan
+![Kategori Peralatan](docs/screenshots/4_kategori.png)
+*Antarmuka berbasis kartu (card-based) untuk mengelola kategori peralatan, lengkap dengan ikon SVG interaktif dan jumlah peralatan per kategori.*
+
 ## 💻 Tech Stack
 *   **Backend:** Laravel 13 (PHP)
 *   **Frontend:** Vue.js 3 + Inertia.js (Composition API)
