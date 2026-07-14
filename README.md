@@ -1,97 +1,92 @@
-# Smart-Hub Management System
+# Smart-Hub Management System ⚡
 
-Sistem manajemen peralatan berbasis web menggunakan **Laravel** + **Inertia.js** + **Vue 3**.
+Smart-Hub Management System adalah platform terintegrasi untuk pengelolaan aset, inventaris peralatan, dan transaksi peminjaman secara efisien dan *real-time*. Proyek ini dikembangkan untuk memenuhi tugas UAS Pemrograman Fullstack.
 
-## Arsitektur Repositori
+## 🚀 Fitur Utama
+*   **📦 Manajemen Inventaris Peralatan:** Kelola data peralatan, kategori, dan pantau stok secara otomatis.
+*   **🔄 Tracking Peminjaman Real-time:** Pencatatan peminjaman (Check-in) dan pengembalian (Check-out) yang akurat.
+*   **📊 Dashboard Statistik Interaktif:** Tampilan ringkasan transaksi, status stok, dan log terbaru yang mudah dipahami.
+*   **🛡️ Sistem Autentikasi Aman:** Login khusus administrator (Monolith Architecture dengan Laravel Authentication).
+*   **💎 UI/UX Premium:** Antarmuka responsif dan modern dengan gaya *Glassmorphism*, typography elegan (Plus Jakarta Sans), dan SVG Icons.
 
+## 💻 Tech Stack
+*   **Backend:** Laravel 13 (PHP)
+*   **Frontend:** Vue.js 3 + Inertia.js (Composition API)
+*   **Styling:** Vanilla CSS (Custom Design System, Variables)
+*   **Database:** MySQL / MariaDB (via Eloquent ORM)
+
+## 🛠️ Prasyarat (Prerequisites)
+Pastikan sistem Anda sudah terinstal perangkat lunak berikut:
+1.  **PHP** (minimal versi 8.2)
+2.  **Composer** (PHP Package Manager)
+3.  **Node.js & npm** (minimal versi 18.x)
+4.  **MySQL / MariaDB** (bisa menggunakan XAMPP, Laragon, dll.)
+5.  **Git**
+
+## 📥 Panduan Instalasi (Installation Guide)
+
+**1. Clone Repository**
+```bash
+git clone https://github.com/marvdav01/UAS-Pemrograman-Fullstack.git
+cd UAS-Pemrograman-Fullstack
 ```
-/
-├── frontend/    → Laravel + Inertia.js (Web Application)
-└── backend/     → Backend API (Laravel / your existing API)
-```
 
-Strategi ini memisahkan kode frontend dan backend dalam satu monorepo menggunakan Git, sehingga keduanya dapat di-*maintain* tanpa bersinggungan.
+**2. Setup Database**
+*   Buka aplikasi MySQL Anda (contoh: aktifkan module MySQL di XAMPP).
+*   Buat database baru dengan nama `uas_fullstack`.
+*   Import file `uas_fullstack.sql` yang ada di root direktori ke dalam database tersebut.
 
-## Teknologi
-
-| Layer     | Teknologi                     |
-|-----------|-------------------------------|
-| Frontend  | Laravel 12, Inertia.js, Vue 3 |
-| CSS       | Vanilla CSS (Custom Design System) |
-| Build     | Vite                          |
-| Database  | Supabase (via Backend API)    |
-| Auth      | Token-based (via Backend API) |
-
-## Fitur
-
-- **Login** – Autentikasi terintegrasi dengan backend API (token-based)
-- **Dashboard** – Statistik real-time dari backend
-- **Data Master: Peralatan** – List, Create, Delete
-- **Data Master: Kategori** – List, Create, Delete
-- **Transaksi** – List, Create (Check-in), Update (Check-out), validasi stok
-
-## Cara Menjalankan
-
-### 1. Setup
-
+**3. Setup Aplikasi Laravel (Backend & Frontend)**
 ```bash
 cd frontend
+
+# Install dependensi PHP
 composer install
+
+# Install dependensi Node.js (Frontend)
 npm install
+
+# Buat file konfigurasi environment
 cp .env.example .env
+
+# Generate application key
 php artisan key:generate
 ```
 
-### 2. Konfigurasi API
-
-Edit `.env`:
+**4. Konfigurasi File `.env`**
+Pastikan konfigurasi koneksi database di file `frontend/.env` sudah sesuai dengan lokal Anda:
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=uas_fullstack
+DB_USERNAME=root
+DB_PASSWORD=
 ```
-API_BASE_URL=http://your-backend-api-url/api
-```
 
-### 3. Jalankan Development Server
+**5. Jalankan Aplikasi**
+Buka 2 terminal (satu untuk frontend, satu untuk backend) di direktori `frontend/`.
 
+*Terminal 1 (Vite Dev Server):*
 ```bash
-# Terminal 1 – PHP
-php artisan serve
-
-# Terminal 2 – Vite (Assets)
 npm run dev
 ```
 
-Buka browser di: **http://localhost:8000**
-
-## Struktur Frontend
-
-```
-frontend/
-├── app/Http/Controllers/
-│   ├── AuthController.php        ← Login, Logout
-│   ├── DashboardController.php   ← Stats dashboard
-│   ├── ItemController.php        ← CRUD peralatan
-│   ├── CategoryController.php    ← CRUD kategori
-│   └── TransactionController.php ← Transaksi (checkin/checkout)
-├── app/Http/Middleware/
-│   └── Authenticate.php          ← Session-based auth guard
-├── resources/js/
-│   ├── Layouts/AppLayout.vue     ← Layout utama (sidebar + navbar)
-│   └── Pages/
-│       ├── Auth/Login.vue
-│       ├── Dashboard.vue
-│       ├── Items/Index.vue
-│       ├── Categories/Index.vue
-│       └── Transactions/Index.vue
-└── routes/web.php                 ← Semua routing
-```
-
-## Git & Version Control
-
+*Terminal 2 (Laravel Development Server):*
 ```bash
-# Initial commit
-git add .
-git commit -m "feat: initial frontend setup - Laravel + Inertia.js + Vue3"
-
-# Tambah remote
-git remote add origin <your-github-repo-url>
-git push -u origin main
+php artisan serve
 ```
+Aplikasi kini dapat diakses melalui browser pada alamat: **http://localhost:8000**
+
+## 🔑 Default Credentials (Akun Admin)
+Untuk masuk ke dalam dashboard aplikasi, gunakan kredensial berikut:
+*   **Email:** `admin@smarthub.com`
+*   **Password:** `password`
+
+## 👨‍💻 Kontributor
+*   **Nama:** [Marvin David]
+*   **NIM:** [NIM Anda]
+*   **Mata Kuliah:** Pemrograman Fullstack
+
+---
+*Dibuat dengan ❤️ untuk UAS Pemrograman Fullstack.*
