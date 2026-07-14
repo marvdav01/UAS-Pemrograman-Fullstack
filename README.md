@@ -105,4 +105,4 @@ Untuk masuk ke dalam dashboard aplikasi, gunakan kredensial berikut:
 *   **Mata Kuliah:** Pemrograman Fullstack
 
 ---
-*Dibuat dengan ❤️ untuk UAS Pemrograman Fullstack.*
+*Dibuat untuk UAS Pemrograman Fullstack.*
