@@ -1,0 +1,5 @@
+# Root-level gitignore
+.DS_Store
+Thumbs.db
+
+# Frontend specific ignores are in frontend/.gitignore
