@@ -3,66 +3,50 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class AuthController extends Controller
 {
     /**
-     * Show login page.
+     * Show login page (redirect ke dashboard jika sudah login).
      */
     public function showLogin()
     {
-        if (Session::has('api_token')) {
-            return redirect('/dashboard');
+        if (Auth::check()) {
+            return redirect()->route('dashboard');
         }
         return Inertia::render('Auth/Login');
     }
 
     /**
-     * Handle login request → call backend API.
+     * Handle login menggunakan database lokal.
      */
     public function login(Request $request)
     {
-        $request->validate([
+        $credentials = $request->validate([
             'email'    => 'required|email',
             'password' => 'required|min:6',
         ]);
 
-        $apiBase = config('services.api.base_url');
-
-        $response = Http::acceptJson()->post("{$apiBase}/auth/login", [
-            'email'    => $request->email,
-            'password' => $request->password,
-        ]);
-
-        if ($response->failed()) {
-            return back()->withErrors([
-                'login' => $response->json('message') ?? 'Email atau password salah.',
-            ]);
+        if (Auth::attempt($credentials, $request->boolean('remember'))) {
+            $request->session()->regenerate();
+            return redirect()->intended('/dashboard');
         }
 
-        $data = $response->json();
-
-        Session::put('api_token', $data['token'] ?? $data['access_token'] ?? '');
-        Session::put('auth_user', $data['user'] ?? []);
-
-        return redirect('/dashboard');
+        return back()->withErrors([
+            'login' => 'Email atau password salah. Silakan coba lagi.',
+        ])->onlyInput('email');
     }
 
     /**
-     * Logout: destroy session.
+     * Logout: hapus sesi.
      */
-    public function logout()
+    public function logout(Request $request)
     {
-        $apiBase = config('services.api.base_url');
-        $token   = Session::get('api_token');
-
-        Http::withToken($token)->post("{$apiBase}/auth/logout");
-
-        Session::flush();
-
-        return redirect('/login');
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        return redirect()->route('login');
     }
 }

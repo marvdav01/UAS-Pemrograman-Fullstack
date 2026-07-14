@@ -2,63 +2,49 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
+use App\Models\Item;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Session;
 use Inertia\Inertia;
 
 class ItemController extends Controller
 {
-    private function apiBase(): string
-    {
-        return config('services.api.base_url');
-    }
-
-    private function token(): string
-    {
-        return Session::get('api_token', '');
-    }
-
     public function index()
     {
-        $itemsResp = Http::withToken($this->token())->get("{$this->apiBase()}/items");
-        $catsResp  = Http::withToken($this->token())->get("{$this->apiBase()}/categories");
+        $items      = Item::with('category')->latest()->get();
+        $categories = Category::orderBy('name')->get(['id', 'name']);
 
         return Inertia::render('Items/Index', [
-            'items'      => $itemsResp->json('data') ?? $itemsResp->json() ?? [],
-            'categories' => $catsResp->json('data') ?? $catsResp->json() ?? [],
+            'items'      => $items,
+            'categories' => $categories,
         ]);
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'code'        => 'required|string|max:50',
+            'code'        => 'required|string|max:50|unique:items,code',
             'name'        => 'required|string|max:255',
-            'category_id' => 'required',
+            'category_id' => 'required|exists:categories,id',
             'stock'       => 'required|integer|min:0',
             'description' => 'nullable|string',
+        ], [
+            'code.unique'         => 'Kode peralatan sudah digunakan.',
+            'category_id.exists'  => 'Kategori tidak ditemukan.',
         ]);
 
-        $response = Http::withToken($this->token())
-            ->post("{$this->apiBase()}/items", $validated);
+        Item::create($validated);
 
-        if ($response->failed()) {
-            return back()->withErrors($response->json('errors') ?? ['name' => 'Gagal menyimpan data.']);
-        }
-
-        return redirect('/items')->with('success', 'Peralatan berhasil ditambahkan.');
+        return redirect()->route('items.index')
+            ->with('success', 'Peralatan berhasil ditambahkan.');
     }
 
     public function destroy(int $id)
     {
-        $response = Http::withToken($this->token())
-            ->delete("{$this->apiBase()}/items/{$id}");
+        $item = Item::findOrFail($id);
+        $item->delete();
 
-        if ($response->failed()) {
-            return back()->withErrors(['error' => 'Gagal menghapus data.']);
-        }
-
-        return redirect('/items')->with('success', 'Peralatan berhasil dihapus.');
+        return redirect()->route('items.index')
+            ->with('success', 'Peralatan berhasil dihapus.');
     }
 }

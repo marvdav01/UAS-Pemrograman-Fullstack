@@ -1,86 +1,123 @@
 <template>
-  <AppLayout title="Transaksi">
-    <div class="page-header">
+  <AppLayout title="Peminjaman">
+    <!-- Page Header -->
+    <div class="page-hd">
       <div>
-        <h2>Manajemen Transaksi</h2>
-        <p class="page-sub">Kelola transaksi check-in dan check-out peralatan</p>
+        <h2 class="page-hd-title">Manajemen Peminjaman</h2>
+        <p class="page-hd-sub">Kelola transaksi check-in dan check-out peralatan</p>
       </div>
       <button id="btn-open-create-transaction" class="btn btn-primary" @click="openCreate">
-        + Buat Transaksi
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Buat Transaksi
       </button>
     </div>
 
-    <!-- Filters -->
-    <div class="filters card" style="padding: 1rem; margin-bottom: 1.25rem; display: flex; gap: 1rem; flex-wrap: wrap;">
-      <input
-        id="input-search-transaction"
-        v-model="search"
-        type="text"
-        class="form-control"
-        placeholder="🔍 Cari transaksi..."
-        style="max-width: 280px;"
-      />
-      <select id="filter-status" v-model="statusFilter" class="form-control" style="max-width: 200px;">
+    <!-- Toolbar -->
+    <div class="toolbar card" style="padding:1rem 1.25rem; margin-bottom:1.25rem; display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
+      <div class="search-wrap" style="flex:1; min-width:180px; max-width:320px;">
+        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input
+          id="input-search-transaction"
+          v-model="search"
+          type="text"
+          class="form-control"
+          placeholder="Cari peminjam atau peralatan..."
+        />
+      </div>
+
+      <select id="filter-status" v-model="statusFilter" class="form-control" style="max-width:170px;">
         <option value="">Semua Status</option>
-        <option value="checkin">Check-in</option>
-        <option value="checkout">Check-out</option>
+        <option value="checkin">Dipinjam</option>
+        <option value="checkout">Dikembalikan</option>
         <option value="pending">Pending</option>
       </select>
+
+      <div class="toolbar-badges" style="margin-left:auto; display:flex; gap:0.5rem; flex-wrap:wrap;">
+        <span class="badge badge-primary">{{ filteredTransactions.length }} transaksi</span>
+      </div>
     </div>
 
     <!-- Table -->
     <div class="card">
-      <div class="table-container">
+      <div class="table-wrap">
         <table>
           <thead>
             <tr>
-              <th>ID</th>
+              <th style="width:44px">#</th>
               <th>Peminjam</th>
               <th>Peralatan</th>
-              <th>Tanggal Pinjam</th>
-              <th>Tgl Kembali</th>
+              <th>Tgl. Pinjam</th>
+              <th>Tgl. Kembali</th>
               <th>Status</th>
-              <th>Aksi</th>
+              <th style="text-align:center">Aksi</th>
             </tr>
           </thead>
           <tbody>
             <tr v-if="!filteredTransactions.length">
-              <td colspan="7" class="empty-state">Tidak ada data transaksi.</td>
-            </tr>
-            <tr v-for="trx in filteredTransactions" :key="trx.id" class="table-row">
-              <td><span class="badge">#{{ trx.id }}</span></td>
-              <td>
-                <div class="trx-borrower">{{ trx.borrower_name }}</div>
-                <div class="trx-sub">{{ trx.borrower_nim }}</div>
+              <td colspan="7">
+                <div class="empty-state">
+                  <div class="empty-state-icon">🔄</div>
+                  <div class="empty-state-text">Tidak ada data transaksi</div>
+                </div>
               </td>
-              <td>{{ trx.item?.name ?? '-' }}</td>
-              <td>{{ formatDate(trx.borrow_date) }}</td>
+            </tr>
+            <tr v-for="trx in filteredTransactions" :key="trx.id">
+              <td><span class="badge badge-primary">#{{ trx.id }}</span></td>
               <td>
+                <div style="font-weight:600; color:var(--text-1)">{{ trx.borrower_name }}</div>
+                <div style="font-size:0.72rem; color:var(--text-3); margin-top:0.1rem">{{ trx.borrower_nim }}</div>
+              </td>
+              <td>
+                <div style="font-weight:500; color:var(--text-1)">{{ trx.item_name ?? '-' }}</div>
+                <div v-if="trx.item_code" style="font-size:0.72rem; color:var(--text-3); margin-top:0.1rem">
+                  <span class="badge badge-secondary">{{ trx.item_code }}</span>
+                </div>
+              </td>
+              <td style="font-size:0.82rem">{{ formatDate(trx.borrow_date) }}</td>
+              <td style="font-size:0.82rem">
                 <span :class="{ 'overdue': isOverdue(trx) }">
                   {{ formatDate(trx.return_date) }}
                 </span>
+                <span v-if="isOverdue(trx)" style="display:block; font-size:0.68rem; color:#f87171; margin-top:0.15rem">
+                  ⚠️ Terlambat
+                </span>
               </td>
               <td>
-                <span class="status-badge" :class="trx.status">{{ statusLabel(trx.status) }}</span>
+                <span class="badge" :class="statusBadgeClass(trx.status)">
+                  {{ statusLabel(trx.status) }}
+                </span>
               </td>
-              <td class="action-cell">
+              <td style="text-align:center">
                 <button
                   v-if="trx.status === 'checkin'"
                   :id="`btn-checkout-${trx.id}`"
-                  class="btn btn-checkout btn-sm"
+                  class="btn btn-success btn-sm"
                   @click="openUpdate(trx)"
                 >
-                  ✅ Check-out
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  Kembalikan
                 </button>
                 <button
                   v-if="trx.status === 'pending'"
                   :id="`btn-checkin-${trx.id}`"
-                  class="btn btn-checkin btn-sm"
+                  class="btn btn-primary btn-sm"
                   @click="updateToCheckin(trx)"
                 >
-                  📥 Check-in
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                  Check-in
                 </button>
-                <span v-if="trx.status === 'checkout'" class="done-badge">Selesai</span>
+                <span v-if="trx.status === 'checkout'" class="badge badge-success" style="font-size:0.7rem">
+                  ✓ Selesai
+                </span>
               </td>
             </tr>
           </tbody>
@@ -88,54 +125,59 @@
       </div>
     </div>
 
-    <!-- Create Modal -->
+    <!-- Create Transaction Modal -->
     <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
-      <div class="modal glass">
+      <div class="modal" style="max-width:560px;">
         <div class="modal-header">
-          <h3>Buat Transaksi Baru</h3>
-          <button class="modal-close" @click="closeModal">✕</button>
+          <h3 class="modal-title">Buat Transaksi Peminjaman</h3>
+          <button class="modal-close" @click="closeModal" aria-label="Close">✕</button>
         </div>
 
         <form @submit.prevent="submitCreate" novalidate>
-          <div class="form-row">
+          <div class="form-grid">
             <div class="form-group">
               <label for="trx-borrower" class="form-label">Nama Peminjam</label>
-              <input id="trx-borrower" v-model="form.borrower_name" type="text" class="form-control" :class="{ 'input-error': form.errors.borrower_name }" placeholder="Nama lengkap" required />
-              <span v-if="form.errors.borrower_name" class="field-error">{{ form.errors.borrower_name }}</span>
+              <input id="trx-borrower" v-model="form.borrower_name" type="text" class="form-control" :class="{ 'is-invalid': form.errors.borrower_name }" placeholder="Nama lengkap" required />
+              <p v-if="form.errors.borrower_name" class="form-error">{{ form.errors.borrower_name }}</p>
             </div>
             <div class="form-group">
               <label for="trx-nim" class="form-label">NIM / No. Identitas</label>
-              <input id="trx-nim" v-model="form.borrower_nim" type="text" class="form-control" :class="{ 'input-error': form.errors.borrower_nim }" placeholder="12345678" required />
-              <span v-if="form.errors.borrower_nim" class="field-error">{{ form.errors.borrower_nim }}</span>
+              <input id="trx-nim" v-model="form.borrower_nim" type="text" class="form-control" :class="{ 'is-invalid': form.errors.borrower_nim }" placeholder="12345678" required />
+              <p v-if="form.errors.borrower_nim" class="form-error">{{ form.errors.borrower_nim }}</p>
             </div>
           </div>
 
           <div class="form-group">
             <label for="trx-item" class="form-label">Peralatan</label>
-            <select id="trx-item" v-model="form.item_id" class="form-control" :class="{ 'input-error': form.errors.item_id }" required>
+            <select id="trx-item" v-model="form.item_id" class="form-control" :class="{ 'is-invalid': form.errors.item_id }" required>
               <option value="">-- Pilih Peralatan --</option>
               <option v-for="item in availableItems" :key="item.id" :value="item.id">
-                {{ item.name }} (Stok: {{ item.stock }})
+                {{ item.name }} — {{ item.code }} (Stok: {{ item.stock }})
               </option>
             </select>
-            <span v-if="form.errors.item_id" class="field-error">{{ form.errors.item_id }}</span>
+            <p v-if="form.errors.item_id" class="form-error">{{ form.errors.item_id }}</p>
           </div>
 
-          <div class="form-row">
+          <div class="form-grid">
             <div class="form-group">
               <label for="trx-borrow-date" class="form-label">Tanggal Pinjam</label>
-              <input id="trx-borrow-date" v-model="form.borrow_date" type="date" class="form-control" :class="{ 'input-error': form.errors.borrow_date }" required />
-              <span v-if="form.errors.borrow_date" class="field-error">{{ form.errors.borrow_date }}</span>
+              <input id="trx-borrow-date" v-model="form.borrow_date" type="date" class="form-control" :class="{ 'is-invalid': form.errors.borrow_date }" required />
+              <p v-if="form.errors.borrow_date" class="form-error">{{ form.errors.borrow_date }}</p>
             </div>
             <div class="form-group">
               <label for="trx-return-date" class="form-label">Tanggal Kembali</label>
-              <input id="trx-return-date" v-model="form.return_date" type="date" class="form-control" :class="{ 'input-error': form.errors.return_date }" required />
-              <span v-if="form.errors.return_date" class="field-error">{{ form.errors.return_date }}</span>
+              <input id="trx-return-date" v-model="form.return_date" type="date" class="form-control" :class="{ 'is-invalid': form.errors.return_date }" required />
+              <p v-if="form.errors.return_date" class="form-error">{{ form.errors.return_date }}</p>
             </div>
           </div>
 
-          <!-- Validation Alert -->
-          <div v-if="validationError" class="alert-error">⚠️ {{ validationError }}</div>
+          <!-- Client-side validation alert -->
+          <div v-if="validationError" class="alert alert-danger" style="margin-top:0.5rem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            {{ validationError }}
+          </div>
 
           <div class="form-group">
             <label for="trx-notes" class="form-label">Catatan (opsional)</label>
@@ -146,32 +188,48 @@
             <button type="button" class="btn btn-secondary" @click="closeModal">Batal</button>
             <button id="btn-submit-transaction" type="submit" class="btn btn-primary" :disabled="form.processing">
               <span v-if="form.processing" class="spinner"></span>
-              <span v-else>Simpan</span>
+              <span v-else>Simpan Transaksi</span>
             </button>
           </div>
         </form>
       </div>
     </div>
 
-    <!-- Update / Check-out Modal -->
+    <!-- Check-out Confirmation Modal -->
     <div v-if="showUpdateModal" class="modal-overlay" @click.self="closeUpdateModal">
-      <div class="modal glass">
+      <div class="modal" style="max-width:460px;">
         <div class="modal-header">
-          <h3>Konfirmasi Check-out</h3>
-          <button class="modal-close" @click="closeUpdateModal">✕</button>
+          <h3 class="modal-title">Konfirmasi Pengembalian</h3>
+          <button class="modal-close" @click="closeUpdateModal" aria-label="Close">✕</button>
         </div>
-        <p style="color: var(--text-secondary); margin-bottom: 1.25rem;">
-          Konfirmasi pengembalian peralatan <strong>{{ selectedTrx?.item?.name }}</strong> oleh <strong>{{ selectedTrx?.borrower_name }}</strong>.
-        </p>
+
+        <div style="background:var(--surface-2); border:1px solid var(--border); border-radius:var(--r-md); padding:1rem; margin-bottom:1.25rem;">
+          <div style="font-size:0.78rem; color:var(--text-3); margin-bottom:0.5rem">Detail Transaksi</div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:0.3rem">
+            <span style="color:var(--text-2); font-size:0.82rem">Peminjam</span>
+            <span style="color:var(--text-1); font-weight:600; font-size:0.82rem">{{ selectedTrx?.borrower_name }}</span>
+          </div>
+          <div style="display:flex; justify-content:space-between">
+            <span style="color:var(--text-2); font-size:0.82rem">Peralatan</span>
+            <span style="color:var(--text-1); font-weight:600; font-size:0.82rem">{{ selectedTrx?.item_name ?? '-' }}</span>
+          </div>
+        </div>
+
         <div class="form-group">
-          <label for="checkout-notes" class="form-label">Catatan Pengembalian</label>
+          <label for="checkout-notes" class="form-label">Catatan Pengembalian (opsional)</label>
           <textarea id="checkout-notes" v-model="updateForm.checkout_notes" class="form-control" rows="2" placeholder="Kondisi peralatan saat dikembalikan..."></textarea>
         </div>
+
         <div class="modal-footer">
           <button class="btn btn-secondary" @click="closeUpdateModal">Batal</button>
-          <button id="btn-confirm-checkout" class="btn btn-primary" @click="submitCheckout" :disabled="updateForm.processing">
+          <button id="btn-confirm-checkout" class="btn btn-success" @click="submitCheckout" :disabled="updateForm.processing">
             <span v-if="updateForm.processing" class="spinner"></span>
-            <span v-else>✅ Konfirmasi Check-out</span>
+            <span v-else>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:0.3rem">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+              Konfirmasi Pengembalian
+            </span>
           </button>
         </div>
       </div>
@@ -186,14 +244,14 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 
 const props = defineProps({
   transactions: { type: Array, default: () => [] },
-  items: { type: Array, default: () => [] },
+  items:        { type: Array, default: () => [] },
 });
 
-const search = ref('');
-const statusFilter = ref('');
-const showModal = ref(false);
+const search          = ref('');
+const statusFilter    = ref('');
+const showModal       = ref(false);
 const showUpdateModal = ref(false);
-const selectedTrx = ref(null);
+const selectedTrx     = ref(null);
 const validationError = ref('');
 
 const availableItems = computed(() => props.items.filter((i) => i.stock > 0));
@@ -202,7 +260,7 @@ const filteredTransactions = computed(() =>
   props.transactions.filter((t) => {
     const matchSearch =
       t.borrower_name?.toLowerCase().includes(search.value.toLowerCase()) ||
-      t.item?.name?.toLowerCase().includes(search.value.toLowerCase());
+      (t.item_name ?? '').toLowerCase().includes(search.value.toLowerCase());
     const matchStatus = !statusFilter.value || t.status === statusFilter.value;
     return matchSearch && matchStatus;
   })
@@ -211,182 +269,81 @@ const filteredTransactions = computed(() =>
 const today = new Date().toISOString().split('T')[0];
 
 const form = useForm({
-  borrower_name: '',
-  borrower_nim: '',
-  item_id: '',
-  borrow_date: today,
-  return_date: '',
-  notes: '',
-  status: 'checkin',
+  borrower_name: '', borrower_nim: '', item_id: '',
+  borrow_date: today, return_date: '', notes: '', status: 'checkin',
 });
 
-const updateForm = useForm({
-  status: 'checkout',
-  checkout_notes: '',
-});
+const updateForm = useForm({ status: 'checkout', checkout_notes: '' });
 
-const openCreate = () => {
-  form.reset();
-  validationError.value = '';
-  showModal.value = true;
-};
-
-const closeModal = () => {
-  showModal.value = false;
-  form.clearErrors();
-  validationError.value = '';
-};
+const openCreate  = () => { form.reset(); form.borrow_date = today; validationError.value = ''; showModal.value = true; };
+const closeModal  = () => { showModal.value = false; form.clearErrors(); validationError.value = ''; };
 
 const submitCreate = () => {
-  // Client-side validation: return date must be after borrow date
   if (form.borrow_date && form.return_date && form.return_date < form.borrow_date) {
     validationError.value = 'Tanggal kembali tidak boleh sebelum tanggal pinjam.';
     return;
   }
   validationError.value = '';
-
-  // Validate item stock
   const selectedItem = props.items.find((i) => i.id == form.item_id);
   if (selectedItem && selectedItem.stock <= 0) {
     validationError.value = 'Stok peralatan yang dipilih sudah habis.';
     return;
   }
-
   form.post('/transactions', { onSuccess: () => closeModal() });
 };
 
-const openUpdate = (trx) => { selectedTrx.value = trx; updateForm.reset(); showUpdateModal.value = true; };
+const openUpdate      = (trx) => { selectedTrx.value = trx; updateForm.reset(); showUpdateModal.value = true; };
 const closeUpdateModal = () => { showUpdateModal.value = false; updateForm.clearErrors(); };
 
 const submitCheckout = () => {
-  updateForm.put(`/transactions/${selectedTrx.value.id}`, {
-    onSuccess: () => closeUpdateModal(),
-  });
+  updateForm.put(`/transactions/${selectedTrx.value.id}`, { onSuccess: () => closeUpdateModal() });
 };
 
 const updateToCheckin = (trx) => {
   router.put(`/transactions/${trx.id}`, { status: 'checkin' });
 };
 
-const formatDate = (date) => {
-  if (!date) return '-';
-  return new Date(date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-};
+const formatDate = (d) => d ? new Date(d).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' }) : '-';
 
 const isOverdue = (trx) => {
   if (trx.status === 'checkout') return false;
   return trx.return_date && new Date(trx.return_date) < new Date();
 };
 
-const statusLabel = (status) => {
-  const labels = { checkin: 'Check-in', checkout: 'Check-out', pending: 'Pending' };
-  return labels[status] ?? status;
-};
+const statusLabel = (s) => ({ checkin: 'Dipinjam', checkout: 'Dikembalikan', pending: 'Pending' }[s] ?? s);
+
+const statusBadgeClass = (s) => ({
+  checkin:  'badge-danger',
+  checkout: 'badge-success',
+  pending:  'badge-warning',
+}[s] ?? 'badge-secondary');
 </script>
 
 <style scoped>
-.page-header {
+.page-hd {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   margin-bottom: 1.5rem;
   gap: 1rem;
+  flex-wrap: wrap;
 }
-.page-header h2 { margin: 0; font-size: 1.25rem; }
-.page-sub { color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.25rem; }
-.filters { display: flex; align-items: center; }
+.page-hd-title { font-size: 1.3rem; font-weight: 800; margin: 0; letter-spacing: -0.02em; }
+.page-hd-sub   { color: var(--text-3); font-size: 0.82rem; margin-top: 0.2rem; }
 
-.trx-borrower { font-weight: 600; }
-.trx-sub { font-size: 0.8rem; color: var(--text-secondary); }
+.overdue { color: #f87171; font-weight: 600; }
 
-.badge {
-  background: rgba(59, 130, 246, 0.15);
-  color: var(--primary-color);
-  padding: 0.2rem 0.5rem;
-  border-radius: 0.25rem;
-  font-size: 0.85rem;
-  font-weight: 600;
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 1rem;
 }
-
-.status-badge {
-  padding: 0.2rem 0.65rem;
-  border-radius: 999px;
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-.status-badge.checkin { background: rgba(16, 185, 129, 0.15); color: #34d399; }
-.status-badge.checkout { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
-.status-badge.pending { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
-
-.overdue { color: #fca5a5; font-weight: 600; }
-
-.action-cell { display: flex; gap: 0.5rem; align-items: center; }
-.btn-sm { padding: 0.3rem 0.7rem; font-size: 0.82rem; }
-.btn-checkout { background: rgba(59, 130, 246, 0.15); color: var(--primary-color); border: 1px solid rgba(59,130,246,0.3); }
-.btn-checkout:hover { background: rgba(59, 130, 246, 0.25); }
-.btn-checkin { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
-.btn-checkin:hover { background: rgba(16, 185, 129, 0.25); }
-.btn-secondary { background: var(--surface-border); color: var(--text-primary); }
-.done-badge { font-size: 0.8rem; color: var(--text-secondary); }
-
-.empty-state { text-align: center; color: var(--text-secondary); padding: 2.5rem; }
-
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-
-.alert-error {
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #fca5a5;
-  padding: 0.75rem 1rem;
-  border-radius: var(--radius-md);
-  margin-bottom: 1rem;
-  font-size: 0.9rem;
-}
-
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  z-index: 200;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-}
-.modal {
-  width: 100%;
-  max-width: 560px;
-  border-radius: var(--radius-lg);
-  padding: 1.75rem;
-  animation: slideUp 0.25s ease;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
-.modal-header h3 { margin: 0; }
-.modal-close { background: none; border: none; color: var(--text-secondary); font-size: 1.1rem; cursor: pointer; }
-.modal-footer { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem; }
-.input-error { border-color: var(--danger-color) !important; }
-.field-error { display: block; margin-top: 0.3rem; font-size: 0.8rem; color: #fca5a5; }
-
-.spinner {
-  width: 16px; height: 16px;
-  border: 2px solid rgba(255,255,255,0.3);
-  border-top-color: white;
-  border-radius: 50%;
-  animation: spin 0.6s linear infinite;
-  display: inline-block;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 600px) {
-  .page-header { flex-direction: column; }
-  .page-header button { width: 100%; }
-  .form-row { grid-template-columns: 1fr; }
-  .filters { flex-direction: column; align-items: stretch; }
+  .page-hd { flex-direction: column; }
+  .page-hd .btn { width: 100%; }
+  .form-grid { grid-template-columns: 1fr; }
+  .toolbar { flex-direction: column; align-items: stretch !important; }
+  .toolbar select { max-width: 100% !important; }
 }
 </style>

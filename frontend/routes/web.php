@@ -6,7 +6,6 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\TransactionController;
-use App\Http\Middleware\Authenticate;
 
 /*
 |--------------------------------------------------------------------------
@@ -14,15 +13,17 @@ use App\Http\Middleware\Authenticate;
 |--------------------------------------------------------------------------
 */
 
-// Authentication (guest only)
-Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+// Redirect root ke dashboard
+Route::get('/', fn () => redirect()->route('dashboard'));
 
-// Redirect root
-Route::get('/', fn () => redirect('/dashboard'));
+// Authentication (hanya untuk yang belum login)
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+});
 
-// Protected routes
-Route::middleware([Authenticate::class])->group(function () {
+// Protected routes (harus login)
+Route::middleware('auth')->group(function () {
     // Logout
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 

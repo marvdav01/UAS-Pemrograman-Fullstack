@@ -2,36 +2,42 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Session;
+use App\Models\Category;
+use App\Models\Item;
+use App\Models\Transaction;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        $apiBase = config('services.api.base_url');
-        $token   = Session::get('api_token', '');
+        $totalItems        = Item::count();
+        $totalCategories   = Category::count();
+        $totalTransactions = Transaction::count();
+        $checkinCount      = Transaction::where('status', 'checkin')->count();
 
-        $itemsResp  = Http::withToken($token)->get("{$apiBase}/items");
-        $catsResp   = Http::withToken($token)->get("{$apiBase}/categories");
-        $trxResp    = Http::withToken($token)->get("{$apiBase}/transactions");
-
-        $items        = $itemsResp->json('data') ?? $itemsResp->json() ?? [];
-        $categories   = $catsResp->json('data')  ?? $catsResp->json()  ?? [];
-        $transactions = $trxResp->json('data')   ?? $trxResp->json()   ?? [];
-
-        $checkinCount = count(array_filter($transactions, fn($t) => ($t['status'] ?? '') === 'checkin'));
-        $recentTrx    = array_slice(array_reverse($transactions), 0, 5);
+        $recentTransactions = Transaction::with('item')
+            ->latest()
+            ->take(5)
+            ->get()
+            ->map(fn($t) => [
+                'id'             => $t->id,
+                'borrower_name'  => $t->borrower_name,
+                'borrower_nim'   => $t->borrower_nim,
+                'borrow_date'    => $t->borrow_date,
+                'return_date'    => $t->return_date,
+                'status'         => $t->status,
+                'item_name'      => $t->item->name ?? '-',
+            ]);
 
         return Inertia::render('Dashboard', [
             'stats' => [
-                'items'        => count($items),
-                'categories'   => count($categories),
-                'transactions' => count($transactions),
+                'items'        => $totalItems,
+                'categories'   => $totalCategories,
+                'transactions' => $totalTransactions,
                 'checkin'      => $checkinCount,
             ],
-            'recentTransactions' => $recentTrx,
+            'recentTransactions' => $recentTransactions,
         ]);
     }
 }

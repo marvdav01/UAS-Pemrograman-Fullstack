@@ -2,59 +2,42 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Session;
 use Inertia\Inertia;
 
 class CategoryController extends Controller
 {
-    private function apiBase(): string
-    {
-        return config('services.api.base_url');
-    }
-
-    private function token(): string
-    {
-        return Session::get('api_token', '');
-    }
-
     public function index()
     {
-        $response = Http::withToken($this->token())
-            ->get("{$this->apiBase()}/categories");
+        $categories = Category::withCount('items')->latest()->get();
 
         return Inertia::render('Categories/Index', [
-            'categories' => $response->json('data') ?? $response->json() ?? [],
+            'categories' => $categories,
         ]);
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name'        => 'required|string|max:255',
+            'name'        => 'required|string|max:255|unique:categories,name',
             'description' => 'nullable|string',
+        ], [
+            'name.unique' => 'Nama kategori sudah ada.',
         ]);
 
-        $response = Http::withToken($this->token())
-            ->post("{$this->apiBase()}/categories", $validated);
+        Category::create($validated);
 
-        if ($response->failed()) {
-            return back()->withErrors($response->json('errors') ?? ['name' => 'Gagal menyimpan kategori.']);
-        }
-
-        return redirect('/categories')->with('success', 'Kategori berhasil ditambahkan.');
+        return redirect()->route('categories.index')
+            ->with('success', 'Kategori berhasil ditambahkan.');
     }
 
     public function destroy(int $id)
     {
-        $response = Http::withToken($this->token())
-            ->delete("{$this->apiBase()}/categories/{$id}");
+        $category = Category::findOrFail($id);
+        $category->delete();
 
-        if ($response->failed()) {
-            return back()->withErrors(['error' => 'Gagal menghapus kategori.']);
-        }
-
-        return redirect('/categories')->with('success', 'Kategori berhasil dihapus.');
+        return redirect()->route('categories.index')
+            ->with('success', 'Kategori berhasil dihapus.');
     }
 }
